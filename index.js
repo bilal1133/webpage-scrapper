@@ -12,6 +12,7 @@ const getBrowserInstance = async () => {
     console.log("Launching a new browser instance...");
     browser = await puppeteer.launch({
       headless: true,
+      executablePath: process.env.CHROME_BIN || null, // Use Heroku's Chrome binary
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
