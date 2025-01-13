@@ -12,7 +12,31 @@ const getBrowserInstance = async () => {
     console.log("Launching a new browser instance...");
     browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Heroku
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--no-zygote",
+        "--single-process",
+        "--disable-background-networking",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-breakpad",
+        "--disable-component-extensions-with-background-pages",
+        "--disable-features=TranslateUI,BlinkGenPropertyTrees",
+        "--disable-ipc-flooding-protection",
+        "--disable-renderer-backgrounding",
+        "--enable-features=NetworkService,NetworkServiceInProcess",
+        "--force-color-profile=srgb",
+        "--metrics-recording-only",
+        "--mute-audio",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--password-store=basic",
+        "--use-mock-keychain",
+      ],
     });
   }
   return browser;
@@ -25,7 +49,8 @@ app.get("/scrape", async (req, res) => {
   if (!url) {
     return res.status(400).json({
       success: false,
-      message: "URL parameter is required. Please provide a URL using ?url=your_url.",
+      message:
+        "URL parameter is required. Please provide a URL using ?url=your_url.",
     });
   }
 
@@ -71,7 +96,9 @@ app.get("/scrape", async (req, res) => {
 
 // Default route for health check or root access
 app.get("/", (req, res) => {
-  res.send("Welcome to the Scraper API! Use the endpoint /scrape?url=your_url&type=[text|html] to fetch page data.");
+  res.send(
+    "Welcome to the Scraper API! Use the endpoint /scrape?url=your_url&type=[text|html] to fetch page data."
+  );
 });
 
 // Graceful shutdown to close the browser instance when the app is terminated
