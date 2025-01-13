@@ -19,39 +19,51 @@ const getBrowserInstance = async () => {
 };
 
 // REST API Endpoint
-app.get("/scrape/:id", async (req, res) => {
-  const { id } = req.params; // Get the listing ID from the URL
-  const url = `https://www.airbnb.com/rooms/${id}`; // Build the Airbnb URL dynamically
+app.get("/scrape", async (req, res) => {
+  const { url, type } = req.query; // Get URL and type from query params
+
+  if (!url) {
+    return res.status(400).json({
+      success: false,
+      message: "URL parameter is required. Please provide a URL using ?url=your_url.",
+    });
+  }
 
   try {
     const browserInstance = await getBrowserInstance(); // Reuse or create the browser
     const page = await browserInstance.newPage();
 
-    // Navigate to the Airbnb listing
+    // Navigate to the provided URL
     await page.goto(url, { waitUntil: "networkidle2" });
 
     // Wait for the main content to load
     await page.waitForSelector("body");
 
-    // Extract the entire HTML content from the page
-    const htmlContent = await page.evaluate(() => document.body.innerHTML);
+    // Extract content based on the requested type
+    let content;
+    if (type === "text") {
+      content = await page.evaluate(() => document.body.innerText); // Get all visible text
+    } else {
+      content = await page.evaluate(() => document.body.innerHTML); // Get full HTML
+    }
 
     // Close the page (not the browser) after scraping
     await page.close();
 
-    // Send the HTML content as the API response
+    // Send the content as the API response
     res.status(200).json({
       success: true,
-      id,
-      html: htmlContent,
+      url,
+      type: type || "html",
+      content,
     });
   } catch (err) {
-    console.error("Error scraping Airbnb:", err);
+    console.error("Error scraping the page:", err);
 
     // Send an error response
     res.status(500).json({
       success: false,
-      message: "Error scraping the page. Please check the listing ID and try again.",
+      message: "Error scraping the page. Please check the URL and try again.",
       error: err.message,
     });
   }
@@ -59,7 +71,7 @@ app.get("/scrape/:id", async (req, res) => {
 
 // Default route for health check or root access
 app.get("/", (req, res) => {
-  res.send("Welcome to the Airbnb Scraper API! Use the endpoint /scrape/:id to fetch listing data.");
+  res.send("Welcome to the Scraper API! Use the endpoint /scrape?url=your_url&type=[text|html] to fetch page data.");
 });
 
 // Graceful shutdown to close the browser instance when the app is terminated
